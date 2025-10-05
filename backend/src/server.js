@@ -1,18 +1,17 @@
-
+import { ENV } from "./lib/env.js";
 import express from "express";
 import path from "path";
 import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/message.route.js";
-import { connectDB } from "../lib/db.js";
-import { ENV } from "../lib/env.js";
-
-
+import { connectDB } from "./lib/db.js";
+import cookieparser from "cookie-parser";
 
 const app = express();
 const __dirname = path.resolve();
 
 const PORT = ENV.PORT || 8001;
-app.use(express.json()) // req.body
+app.use(express.json()); // req.body
+app.use(cookieparser());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/message", messageRoutes);

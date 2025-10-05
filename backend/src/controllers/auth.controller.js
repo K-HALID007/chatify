@@ -1,9 +1,9 @@
-
 import { User } from "../models/user.model.js";
 import bcrypt from "bcryptjs";
-import { generateToken } from "../../lib/utlis.js";
+import { generateToken } from "../lib/utlis.js";
 import { sendWelcomeEmail } from "../emails/emailHandlers.js";
-import { ENV } from "../../lib/env.js";
+import { ENV } from "../lib/env.js";
+import cloudinary from "../lib/cloudinary.js";
 
 export const signup = async (req, res) => {
   const { fullName, email, password } = req.body;
@@ -56,7 +56,7 @@ export const signup = async (req, res) => {
 
       try {
         await sendWelcomeEmail(
-          savedUser.email,   
+          savedUser.email,
           savedUser.fullName,
           ENV.CLIENT_URL
         );
@@ -91,6 +91,7 @@ export const login = async (req, res) => {
     generateToken(user._id, res);
 
     res.status(200).json({
+      message: "Login successfully",
       _id: user._id,
       fullName: user.fullName,
       email: user.email,
@@ -121,7 +122,7 @@ export const updateProfile = async (req, res) => {
       userId,
       { profilePic: uploadResponse.secure_url },
       { new: true }
-    );
+    ).select("-password");
 
     res.status(200).json(updatedUser);
   } catch (error) {
