@@ -8,16 +8,39 @@
   syntax: "<angle>";
 }
 
+/* Better mobile touch interactions */
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  html {
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+  }
+  
+  body {
+    overscroll-behavior-y: none;
+  }
+  
+  /* Smooth scrolling for mobile */
+  @media (max-width: 640px) {
+    * {
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+}
+
 .input {
-  @apply w-full bg-slate-800/50 border border-slate-700 rounded-lg py-2 pl-10 pr-4 text-slate-200 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500 focus:border-transparent;
+  @apply w-full bg-slate-800/50 border border-slate-700 rounded-lg py-2 sm:py-2.5 pl-9 sm:pl-10 pr-3 sm:pr-4 text-sm sm:text-base text-slate-200 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500 focus:border-transparent;
 }
 
 .auth-input-icon {
-  @apply absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 size-5;
+  @apply absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 sm:w-5 sm:h-5;
 }
 
 .auth-input-label {
-  @apply block text-sm font-medium text-slate-300 mb-2;
+  @apply block text-xs sm:text-sm font-medium text-slate-300 mb-1.5 sm:mb-2;
 }
 
 .auth-badge {
@@ -25,11 +48,11 @@
 }
 
 .auth-btn {
-  @apply w-full bg-cyan-500 text-white rounded-lg py-2.5 font-medium
-  hover:bg-cyan-600 focus:ring-2 focus:ring-cyan-500;
+  @apply w-full bg-cyan-500 text-white rounded-lg py-2 sm:py-2.5 text-sm sm:text-base font-medium
+  hover:bg-cyan-600 focus:ring-2 focus:ring-cyan-500 transition-colors;
 }
 
 .auth-link {
-  @apply px-4 py-2 inline-block bg-cyan-500/10 rounded-lg text-cyan-400
-  hover:text-cyan-500 text-sm transition-colors;
+  @apply px-3 sm:px-4 py-1.5 sm:py-2 inline-block bg-cyan-500/10 rounded-lg text-cyan-400
+  hover:text-cyan-500 transition-colors;
 }

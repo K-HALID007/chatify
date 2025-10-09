@@ -18,6 +18,9 @@ export default {
           to: { "--border-angle": "360deg" },
         },
       },
+      screens: {
+        'xs': '475px',
+      },
     },
   },
   plugins: [daisyui],

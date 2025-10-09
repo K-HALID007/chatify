@@ -24,24 +24,24 @@ function SignUpPage() {
   };
 
   return (
-    <div className="w-full flex items-center justify-center p-4 bg-slate-900">
-      <div className="relative w-full max-w-6xl md:h-[800px] h-[650px]">
+    <div className="w-full flex items-center justify-center p-2 sm:p-4 bg-slate-900">
+      <div className="relative w-full max-w-6xl h-auto min-h-[500px] md:h-[700px] lg:h-[800px]">
         <BorderAnimatedContainer>
           <div className="w-full flex flex-col md:flex-row">
             {/* FORM CLOUMN - LEFT SIDE */}
-            <div className="md:w-1/2 p-8 flex items-center justify-center md:border-r border-slate-600/30">
+            <div className="md:w-1/2 p-4 sm:p-6 md:p-8 flex items-center justify-center md:border-r border-slate-600/30">
               <div className="w-full max-w-md">
                 {/* HEADING TEXT */}
-                <div className="text-center mb-8">
-                  <MessageCircleIcon className="w-12 h-12 mx-auto text-slate-400 mb-4" />
-                  <h2 className="text-2xl font-bold text-slate-200 mb-2">
+                <div className="text-center mb-6 sm:mb-8">
+                  <MessageCircleIcon className="w-10 h-10 sm:w-12 sm:h-12 mx-auto text-slate-400 mb-3 sm:mb-4" />
+                  <h2 className="text-xl sm:text-2xl font-bold text-slate-200 mb-2">
                     Create Account
                   </h2>
-                  <p className="text-slate-400">Sign up for a new account</p>
+                  <p className="text-sm sm:text-base text-slate-400">Sign up for a new account</p>
                 </div>
 
                 {/* FORM */}
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                   {/* FULL NAME */}
                   <div>
                     <label className="auth-input-label">Full Name</label>
@@ -110,8 +110,8 @@ function SignUpPage() {
                   </button>
                 </form>
 
-                <div className="mt-6 text-center">
-                  <Link to="/login" className="auth-link">
+                <div className="mt-4 sm:mt-6 text-center">
+                  <Link to="/login" className="auth-link text-sm sm:text-base">
                     Already have an account? Login
                   </Link>
                 </div>
@@ -119,22 +119,22 @@ function SignUpPage() {
             </div>
 
             {/* FORM ILLUSTRATION - RIGHT SIDE */}
-            <div className="hidden md:w-1/2 md:flex items-center justify-center p-6 bg-gradient-to-bl from-slate-800/20 to-transparent">
-              <div>
+            <div className="hidden md:w-1/2 md:flex items-center justify-center p-4 lg:p-6 bg-gradient-to-bl from-slate-800/20 to-transparent">
+              <div className="max-w-md">
                 <img
                   src="/signup.png"
                   alt="People using mobile devices"
-                  className="w-full h-auto object-contain"
+                  className="w-full h-auto object-contain max-h-[300px] lg:max-h-[400px]"
                 />
-                <div className="mt-6 text-center">
-                  <h3 className="text-xl font-medium text-cyan-400">
+                <div className="mt-4 lg:mt-6 text-center">
+                  <h3 className="text-lg lg:text-xl font-medium text-cyan-400">
                     Start Your Journey Today
                   </h3>
 
-                  <div className="mt-4 flex justify-center gap-4">
-                    <span className="auth-badge">Free</span>
-                    <span className="auth-badge">Easy Setup</span>
-                    <span className="auth-badge">Private</span>
+                  <div className="mt-3 lg:mt-4 flex justify-center gap-2 lg:gap-4 flex-wrap">
+                    <span className="auth-badge text-xs">Free</span>
+                    <span className="auth-badge text-xs">Easy Setup</span>
+                    <span className="auth-badge text-xs">Private</span>
                   </div>
                 </div>
               </div>
