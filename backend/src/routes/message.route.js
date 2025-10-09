@@ -12,7 +12,7 @@ const router = express.Router();
 
 router.use(arcjetProtection, protectRoute);
 
-router.get("/contact", getAllContacts);
+router.get("/contacts", getAllContacts);
 router.get("/chats", getChatPartners);
 router.get("/:id", getMessagesByUserId);
 router.post("/send/:id", sendMessage);
