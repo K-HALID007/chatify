@@ -145,37 +145,55 @@ export const useChatStore = create((set, get) => ({
   },
 
   subscribeToMessages: () => {
-    const { selectedUser, isSoundEnabled } = get();
+    const { selectedUser } = get();
     if (!selectedUser) return;
 
     const socket = useAuthStore.getState().socket;
     if (!socket) return;
 
+    // Remove any existing listeners first to prevent duplicates
+    const existingHandler = get().chatMessageListener;
+    if (existingHandler) {
+      socket.off("newMessage", existingHandler);
+      socket.off("messagesRead");
+    }
+
     const handler = async (newMessage) => {
+      
       // Extract sender ID (handle both populated and non-populated)
       const senderId =
         typeof newMessage.senderId === "object"
           ? newMessage.senderId._id
           : newMessage.senderId;
 
-      const isMessageSentFromSelectedUser = senderId === selectedUser._id;
+      // Get current selected user (might have changed)
+      const currentSelectedUser = get().selectedUser;
+      if (!currentSelectedUser) return;
+
+      const isMessageSentFromSelectedUser = senderId === currentSelectedUser._id;
       if (!isMessageSentFromSelectedUser) return;
 
-      const currentMessages = get().messages;
-      set({ messages: [...currentMessages, newMessage] });
 
-      // Mark this message as read immediately since chat is open
+      // Mark message as read immediately in frontend since chat is open
+      const messageWithReadStatus = {
+        ...newMessage,
+        read: true
+      };
+
+      // Use functional update to ensure we have latest state
+      set((state) => ({
+        messages: [...state.messages, messageWithReadStatus]
+      }));
+
+      // Mark this message as read in backend
       try {
         await axiosInstance.put(`/messages/mark-read/${senderId}`);
       } catch (error) {
-        console.error(" Error marking message as read:", error);
+        console.error("Error marking message as read:", error);
       }
 
       // Refresh chat list to update order (this chat should move to top)
       get().getMyChatPartners(true);
-
-      // NO SOUND when chat is already open - you're already viewing the messages
-      // Sound only plays from global handler when you're NOT in the chat
     };
 
     // Listen for messages read event (when receiver opens the chat)
@@ -189,17 +207,18 @@ export const useChatStore = create((set, get) => ({
         currentSelectedUser &&
         currentSelectedUser._id === data.chatPartnerId
       ) {
-        const updatedMessages = get().messages.map((msg) => {
-          // Mark messages as read where I'm the sender and they're the receiver
-          if (
-            msg.senderId === authUser._id &&
-            msg.receiverId === currentSelectedUser._id
-          ) {
-            return { ...msg, read: true };
-          }
-          return msg;
-        });
-        set({ messages: updatedMessages });
+        set((state) => ({
+          messages: state.messages.map((msg) => {
+            // Mark messages as read where I'm the sender and they're the receiver
+            if (
+              msg.senderId === authUser._id &&
+              msg.receiverId === currentSelectedUser._id
+            ) {
+              return { ...msg, read: true };
+            }
+            return msg;
+          })
+        }));
       }
     };
 
@@ -208,6 +227,7 @@ export const useChatStore = create((set, get) => ({
 
     socket.on("newMessage", handler);
     socket.on("messagesRead", readHandler);
+    
   },
 
   unsubscribeFromMessages: () => {

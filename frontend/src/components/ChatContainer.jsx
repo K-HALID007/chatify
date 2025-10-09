@@ -1,4 +1,4 @@
-import { useEffect, useRef, memo } from "react";
+import { useEffect, useRef, } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
 import ChatHeader from "./ChatHeader";
@@ -6,8 +6,8 @@ import NoChatHistoryPlaceholder from "./NoChatHistoryPlaceholder";
 import MessageInput from "./MessageInput";
 import MessagesLoadingSkeleton from "./MessagesLoadingSkeleton";
 
-// Memoized Message Component for better performance
-const MessageBubble = memo(({ msg, isOwnMessage }) => {
+// Message Component - memo removed for better mobile compatibility
+const MessageBubble = ({ msg, isOwnMessage }) => {
   return (
     <div className={`chat ${isOwnMessage ? "chat-end" : "chat-start"}`}>
       <div
@@ -56,9 +56,7 @@ const MessageBubble = memo(({ msg, isOwnMessage }) => {
       </div>
     </div>
   );
-});
-
-MessageBubble.displayName = "MessageBubble";
+};
 
 function ChatContainer() {
   const {
@@ -81,7 +79,7 @@ function ChatContainer() {
     // clean up
     return () => unsubscribeFromMessages();
   }, [
-    selectedUser,
+    selectedUser._id,
     getMessagesByUserId,
     subscribeToMessages,
     unsubscribeFromMessages,
@@ -101,15 +99,17 @@ function ChatContainer() {
     previousMessagesLengthRef.current = messages.length;
   }, [messages]);
 
+ 
   return (
-    <div className="flex flex-col h-full w-full">
+    <div className="flex flex-col h-full w-full relative">
       <ChatHeader />
       <div 
-        className="flex-1 px-3 sm:px-4 md:px-6 overflow-y-auto py-4 sm:py-6 md:py-8"
+        className="flex-1 px-3 sm:px-4 md:px-6 overflow-y-auto py-4 sm:py-6 md:py-8 pb-safe"
         style={{ 
           willChange: 'scroll-position',
           transform: 'translateZ(0)',
-          backfaceVisibility: 'hidden'
+          backfaceVisibility: 'hidden',
+          overscrollBehavior: 'contain'
         }}
       >
         {messages.length > 0 && !isMessagesLoading ? (
