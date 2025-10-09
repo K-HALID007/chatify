@@ -87,12 +87,6 @@ export const useAuthStore = create((set, get) => ({
 
     const socket = io(BASE_URL, {
       withCredentials: true, // this ensures cookies are sent with the connection
-      transports: ['websocket', 'polling'], // Enable both transports for mobile compatibility
-      reconnection: true, // Enable auto-reconnection
-      reconnectionAttempts: 5, // Try to reconnect 5 times
-      reconnectionDelay: 1000, // Wait 1 second before reconnecting
-      timeout: 20000, // Connection timeout
-      autoConnect: true, // Auto connect on creation
     });
 
     socket.connect();
@@ -102,19 +96,6 @@ export const useAuthStore = create((set, get) => ({
     // listen for online users event
     socket.on("getOnlineUsers", (userIds) => {
       set({ onlineUsers: userIds });
-    });
-
-    // Add connection error handlers for debugging
-    socket.on("connect_error", (error) => {
-      console.error("Socket connection error:", error);
-    });
-
-    socket.on("reconnect_attempt", () => {
-      console.log("Attempting to reconnect...");
-    });
-
-    socket.on("reconnect", () => {
-      console.log("Reconnected successfully");
     });
   },
 
