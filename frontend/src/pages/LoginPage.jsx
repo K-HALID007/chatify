@@ -6,11 +6,14 @@ import {
   MailIcon,
   LoaderIcon,
   LockIcon,
+  EyeIcon,
+  EyeOffIcon,
 } from "lucide-react";
 import { Link } from "react-router";
 
 function LoginPage() {
   const [formData, setFormData] = useState({ email: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
   const { login, isLoggingIn } = useAuthStore();
 
   const handleSubmit = (e) => {
@@ -64,14 +67,26 @@ function LoginPage() {
                       <LockIcon className="auth-input-icon" />
 
                       <input
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         value={formData.password}
                         onChange={(e) =>
                           setFormData({ ...formData, password: e.target.value })
                         }
-                        className="input"
+                        className="input pr-10 sm:pr-12"
                         placeholder="Enter your password"
                       />
+                      
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors"
+                      >
+                        {showPassword ? (
+                          <EyeOffIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                        ) : (
+                          <EyeIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                        )}
+                      </button>
                     </div>
                   </div>
 
