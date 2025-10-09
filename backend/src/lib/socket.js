@@ -12,6 +12,11 @@ const io = new Server(server, {
     origin: [ENV.CLIENT_URL],
     credentials: true,
   },
+  transports: ['websocket', 'polling'], // Enable both transports for mobile compatibility
+  pingTimeout: 60000, // Increase timeout for slower mobile connections
+  pingInterval: 25000, // Keep connection alive
+  upgradeTimeout: 30000, // Give more time for transport upgrade
+  allowEIO3: true, // Support older clients
 });
 
 // apply authentication middleware to all socket connections
