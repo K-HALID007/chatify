@@ -38,11 +38,11 @@ function ChatContainer() {
   }, [messages]);
 
   return (
-    <>
+    <div className="flex flex-col h-full w-full">
       <ChatHeader />
-      <div className="flex-1 px-6 overflow-y-auto py-8">
+      <div className="flex-1 px-3 sm:px-4 md:px-6 overflow-y-auto py-4 sm:py-6 md:py-8">
         {messages.length > 0 && !isMessagesLoading ? (
-          <div className="max-w-3xl mx-auto space-y-6">
+          <div className="max-w-full sm:max-w-2xl md:max-w-3xl mx-auto space-y-4 sm:space-y-6">
             {messages.map((msg) => (
               <div
                 key={msg._id}
@@ -51,7 +51,7 @@ function ChatContainer() {
                 }`}
               >
                 <div
-                  className={`chat-bubble relative ${
+                  className={`chat-bubble relative max-w-[85%] sm:max-w-md md:max-w-lg break-words ${
                     msg.senderId === authUser._id
                       ? "bg-cyan-600 text-white"
                       : "bg-slate-800 text-slate-200"
@@ -61,11 +61,15 @@ function ChatContainer() {
                     <img
                       src={msg.image}
                       alt="Shared"
-                      className="rounded-lg h-48 object-cover"
+                      className="rounded-lg w-full h-auto max-h-48 sm:max-h-56 md:max-h-64 object-cover"
                     />
                   )}
-                  {msg.text && <p className="mt-2">{msg.text}</p>}
-                  <p className="text-xs mt-1 opacity-75 flex items-center gap-1">
+                  {msg.text && (
+                    <p className="mt-2 text-sm sm:text-base leading-relaxed">
+                      {msg.text}
+                    </p>
+                  )}
+                  <p className="text-[10px] sm:text-xs mt-1 opacity-75 flex items-center gap-1">
                     {new Date(msg.createdAt).toLocaleTimeString(undefined, {
                       hour: "2-digit",
                       minute: "2-digit",
@@ -85,7 +89,7 @@ function ChatContainer() {
       </div>
 
       <MessageInput />
-    </>
+    </div>
   );
 }
 
