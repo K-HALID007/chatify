@@ -159,37 +159,48 @@ export const useChatStore = create((set, get) => ({
     }
 
     const handler = async (newMessage) => {
+      const { authUser } = useAuthStore.getState();
       
-      // Extract sender ID (handle both populated and non-populated)
+      // Extract sender ID and receiver ID (handle both populated and non-populated)
       const senderId =
         typeof newMessage.senderId === "object"
           ? newMessage.senderId._id
           : newMessage.senderId;
 
+      const receiverId =
+        typeof newMessage.receiverId === "object"
+          ? newMessage.receiverId._id
+          : newMessage.receiverId;
+
       // Get current selected user (might have changed)
       const currentSelectedUser = get().selectedUser;
       if (!currentSelectedUser) return;
 
-      const isMessageSentFromSelectedUser = senderId === currentSelectedUser._id;
-      if (!isMessageSentFromSelectedUser) return;
+      // Check if this message belongs to the current conversation
+      // Either: message sent FROM selected user TO me
+      // Or: message sent FROM me TO selected user (from another device)
+      const isMessageFromSelectedUser = senderId === currentSelectedUser._id && receiverId === authUser._id;
+      const isMessageToSelectedUser = senderId === authUser._id && receiverId === currentSelectedUser._id;
+      
+      if (!isMessageFromSelectedUser && !isMessageToSelectedUser) return;
 
-
-      // Mark message as read immediately in frontend since chat is open
-      const messageWithReadStatus = {
-        ...newMessage,
-        read: true
-      };
+      // Mark message as read immediately in frontend if it's from the selected user
+      const messageWithReadStatus = isMessageFromSelectedUser
+        ? { ...newMessage, read: true }
+        : newMessage;
 
       // Use functional update to ensure we have latest state
       set((state) => ({
         messages: [...state.messages, messageWithReadStatus]
       }));
 
-      // Mark this message as read in backend
-      try {
-        await axiosInstance.put(`/messages/mark-read/${senderId}`);
-      } catch (error) {
-        console.error("Error marking message as read:", error);
+      // Mark this message as read in backend only if it's from the selected user
+      if (isMessageFromSelectedUser) {
+        try {
+          await axiosInstance.put(`/messages/mark-read/${senderId}`);
+        } catch (error) {
+          console.error("Error marking message as read:", error);
+        }
       }
 
       // Refresh chat list to update order (this chat should move to top)
