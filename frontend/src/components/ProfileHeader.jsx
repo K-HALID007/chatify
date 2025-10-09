@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { LogOutIcon, VolumeOffIcon, Volume2Icon } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { LogOutIcon, VolumeOffIcon, Volume2Icon, Maximize, Minimize } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
 
@@ -9,8 +9,32 @@ function ProfileHeader() {
   const { logout, authUser, updateProfile } = useAuthStore();
   const { isSoundEnabled, toggleSound } = useChatStore();
   const [selectedImg, setSelectedImg] = useState(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, []);
+
+  const toggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch (error) {
+      console.error("Error toggling fullscreen:", error);
+    }
+  };
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -67,6 +91,19 @@ function ProfileHeader() {
 
         {/* BUTTONS */}
         <div className="flex gap-2 sm:gap-3 md:gap-4 items-center flex-shrink-0">
+          {/* FULLSCREEN BTN */}
+          <button
+            className="text-slate-400 hover:text-slate-200 transition-colors p-1"
+            onClick={toggleFullscreen}
+            title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+          >
+            {isFullscreen ? (
+              <Minimize className="w-5 h-5 sm:w-5 sm:h-5" />
+            ) : (
+              <Maximize className="w-5 h-5 sm:w-5 sm:h-5" />
+            )}
+          </button>
+
           {/* LOGOUT BTN */}
           <button
             className="text-slate-400 hover:text-slate-200 transition-colors p-1"
