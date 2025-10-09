@@ -1,6 +1,8 @@
-import { Message } from "../models/message.model.js";
-import { User } from "../models/user.model.js";
 import cloudinary from "../lib/cloudinary.js";
+import { getReceiverSocketId, io } from "../lib/socket.js";
+import {Message} from "../models/message.model.js"
+import { User } from "../models/user.model.js";
+
 export const getAllContacts = async (req, res) => {
   try {
     const loggedInUserId = req.user._id;
@@ -17,18 +19,20 @@ export const getAllContacts = async (req, res) => {
 
 export const getMessagesByUserId = async (req, res) => {
   try {
-    const myid = req.user._id;
+    const myId = req.user._id;
     const { id: userToChatId } = req.params;
+
     const messages = await Message.find({
       $or: [
-        { senderId: myid, receiverId: userToChatId }, // i send you the message
-        { senderId: userToChatId, receiverId: myid }, // you send me the message
+        { senderId: myId, receiverId: userToChatId },
+        { senderId: userToChatId, receiverId: myId },
       ],
     });
-    res.status(200).json({ messages });
+
+    res.status(200).json(messages);
   } catch (error) {
-    console.log("Error in getMessages controller:".error.message);
-    res.status(500).json({ message: "Internal server error " });
+    console.log("Error in getMessages controller: ", error.message);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -52,10 +56,10 @@ export const sendMessage = async (req, res) => {
     }
 
     let imageUrl;
-    if (imageUrl) {
+    if (image) {
       // upload base64 image to cloudinary
-      const uploadresponse = await cloudinary.uploader.upload(image);
-      imageUrl = uploadresponse.secure_url;
+      const uploadResponse = await cloudinary.uploader.upload(image);
+      imageUrl = uploadResponse.secure_url;
     }
 
     const newMessage = new Message({
@@ -66,7 +70,13 @@ export const sendMessage = async (req, res) => {
     });
 
     await newMessage.save();
-    res.status(201).json({ newMessage });
+
+    const receiverSocketId = getReceiverSocketId(receiverId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("newMessage", newMessage);
+    }
+
+    res.status(201).json(newMessage);
   } catch (error) {
     console.log("Error in sendMessage controller: ", error.message);
     res.status(500).json({ error: "Internal server error" });
@@ -77,7 +87,7 @@ export const getChatPartners = async (req, res) => {
   try {
     const loggedInUserId = req.user._id;
 
-    // find all the messages where the logged-in user is either sender or reciver
+    // find all the messages where the logged-in user is either sender or receiver
     const messages = await Message.find({
       $or: [{ senderId: loggedInUserId }, { receiverId: loggedInUserId }],
     });
@@ -95,9 +105,10 @@ export const getChatPartners = async (req, res) => {
     const chatPartners = await User.find({
       _id: { $in: chatPartnerIds },
     }).select("-password");
+
     res.status(200).json(chatPartners);
   } catch (error) {
-    console.log("Error in getChatPartners :", error.message);
+    console.error("Error in getChatPartners: ", error.message);
     res.status(500).json({ error: "Internal server error" });
   }
 };
