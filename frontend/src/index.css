@@ -29,6 +29,31 @@
       -webkit-overflow-scrolling: touch;
     }
   }
+  
+  /* Optimize scroll performance */
+  .overflow-y-auto {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  /* GPU acceleration for better performance */
+  .chat-bubble {
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    contain: layout style paint;
+  }
+  
+  /* Optimize chat items */
+  .chat {
+    contain: layout style paint;
+  }
+  
+  /* Optimize avatar rendering */
+  .avatar {
+    contain: layout style paint;
+  }
 }
 
 .input {

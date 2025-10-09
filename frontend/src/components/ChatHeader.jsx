@@ -39,7 +39,7 @@ function ChatHeader() {
             {selectedUser.fullName}
           </h3>
           <p className="text-slate-400 text-xs sm:text-sm">
-            {isOnline ? "Online" : "Offline"}
+            {isOnline ? "Online" : "Last seen recently"}
           </p>
         </div>
       </div>

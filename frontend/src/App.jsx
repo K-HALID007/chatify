@@ -4,15 +4,33 @@ import LoginPage from "./pages/LoginPage";
 import SignUpPage from "./pages/SignUpPage";
 import { Navigate, Route, Routes } from "react-router";
 import { useAuthStore } from "./store/useAuthStore";
+import { useChatStore } from "./store/useChatStore";
 import { Toaster } from "react-hot-toast";
 import { useEffect } from "react";
 
 const App = () => {
-  const { checkAuth, isCheckingAuth, authUser } = useAuthStore();
+  const { checkAuth, isCheckingAuth, authUser, socket } = useAuthStore();
+  const { requestNotificationPermission, subscribeToGlobalNotifications, unsubscribeFromGlobalNotifications } = useChatStore();
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  // Ask the user for permission to show notifications
+  useEffect(() => {
+    requestNotificationPermission();
+  }, [requestNotificationPermission]);
+
+  // Subscribe to global notifications when socket is connected
+  useEffect(() => {
+    if (authUser && socket) {
+     
+      subscribeToGlobalNotifications();
+    }
+    return () => {
+      unsubscribeFromGlobalNotifications();
+    };
+  }, [authUser, socket, subscribeToGlobalNotifications, unsubscribeFromGlobalNotifications]);
 
   if (isCheckingAuth) return <PageLoader />;
   return (
