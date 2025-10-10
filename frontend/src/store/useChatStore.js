@@ -103,9 +103,9 @@ export const useChatStore = create((set, get) => ({
       image: messageData.image,
       createdAt: new Date().toISOString(),
       isOptimistic: true,
-      status: 'sending', // Add status field
+      status: "sending", // Add status field
     };
-    
+
     // Immediately update the UI by adding the message
     set({ messages: [...messages, optimisticMessage] });
 
@@ -115,34 +115,40 @@ export const useChatStore = create((set, get) => ({
         messageData,
         { timeout: 10000 } // 10 second timeout
       );
-      
+
       // Replace optimistic message with real message from server
-      const updatedMessages = get().messages.filter(msg => msg._id !== tempId);
+      const updatedMessages = get().messages.filter(
+        (msg) => msg._id !== tempId
+      );
       set({ messages: [...updatedMessages, res.data] });
-      
+
       // Refresh chat list to update order (this chat should move to top)
       get().getMyChatPartners(true);
-      
     } catch (error) {
       console.error("Error sending message:", error);
-      
+
       // Retry logic - retry up to 2 times
       if (retryCount < 2) {
         console.log(`Retrying message send... Attempt ${retryCount + 1}`);
         setTimeout(() => {
           // Remove failed optimistic message before retry
-          const currentMessages = get().messages.filter(msg => msg._id !== tempId);
+          const currentMessages = get().messages.filter(
+            (msg) => msg._id !== tempId
+          );
           set({ messages: currentMessages });
           // Retry
           get().sendMessage(messageData, retryCount + 1);
         }, 1000 * (retryCount + 1)); // Exponential backoff: 1s, 2s
       } else {
         // After all retries failed, mark message as failed
-        const updatedMessages = get().messages.map(msg => 
-          msg._id === tempId ? { ...msg, status: 'failed' } : msg
+        const updatedMessages = get().messages.map((msg) =>
+          msg._id === tempId ? { ...msg, status: "failed" } : msg
         );
         set({ messages: updatedMessages });
-        toast.error(error.response?.data?.message || "Failed to send message. Please try again.");
+        toast.error(
+          error.response?.data?.message ||
+            "Failed to send message. Please try again."
+        );
       }
     }
   },
@@ -166,7 +172,7 @@ export const useChatStore = create((set, get) => ({
 
     const handler = async (newMessage) => {
       const { authUser } = useAuthStore.getState();
-      
+
       // Extract sender ID and receiver ID (handle both populated and non-populated)
       const senderId =
         typeof newMessage.senderId === "object"
@@ -185,9 +191,11 @@ export const useChatStore = create((set, get) => ({
       // Check if this message belongs to the current conversation
       // Either: message sent FROM selected user TO me
       // Or: message sent FROM me TO selected user (from another device)
-      const isMessageFromSelectedUser = senderId === currentSelectedUser._id && receiverId === authUser._id;
-      const isMessageToSelectedUser = senderId === authUser._id && receiverId === currentSelectedUser._id;
-      
+      const isMessageFromSelectedUser =
+        senderId === currentSelectedUser._id && receiverId === authUser._id;
+      const isMessageToSelectedUser =
+        senderId === authUser._id && receiverId === currentSelectedUser._id;
+
       if (!isMessageFromSelectedUser && !isMessageToSelectedUser) return;
 
       // Mark message as read immediately in frontend if it's from the selected user
@@ -197,7 +205,7 @@ export const useChatStore = create((set, get) => ({
 
       // Use functional update to ensure we have latest state
       set((state) => ({
-        messages: [...state.messages, messageWithReadStatus]
+        messages: [...state.messages, messageWithReadStatus],
       }));
 
       // Mark this message as read in backend only if it's from the selected user
@@ -234,7 +242,7 @@ export const useChatStore = create((set, get) => ({
               return { ...msg, read: true };
             }
             return msg;
-          })
+          }),
         }));
       }
     };
@@ -244,7 +252,6 @@ export const useChatStore = create((set, get) => ({
 
     socket.on("newMessage", handler);
     socket.on("messagesRead", readHandler);
-    
   },
 
   unsubscribeFromMessages: () => {
@@ -265,23 +272,39 @@ export const useChatStore = create((set, get) => ({
       recentNotifications,
     } = get();
     const socket = useAuthStore.getState().socket;
+
+    // Prevent duplicate listeners
     if (!socket || globalMessageListener) return;
 
     const handler = (newMessage) => {
-      // Extract sender ID (handle both populated and non-populated)
+      const { authUser } = useAuthStore.getState();
+
+      // Extract sender and receiver IDs (handle both populated and non-populated)
       const senderId =
         typeof newMessage.senderId === "object"
           ? newMessage.senderId._id
           : newMessage.senderId;
 
-      const fromSelectedUser = selectedUser && senderId === selectedUser._id;
+      const receiverId =
+        typeof newMessage.receiverId === "object"
+          ? newMessage.receiverId._id
+          : newMessage.receiverId;
 
-      // Always refresh chat list to update unread counts and order
-      setTimeout(() => {
-        get().getMyChatPartners(true);
-      }, 200);
+      // Check if message is for me
+      const isMessageForMe = receiverId === authUser._id;
 
-      // Update recent notifications map
+      // Only process messages sent TO me (not messages I sent from other devices)
+      if (!isMessageForMe) return;
+
+      const currentSelectedUser = get().selectedUser;
+      const fromSelectedUser =
+        currentSelectedUser && senderId === currentSelectedUser._id;
+
+      // ✅ CRITICAL FIX: Always refresh chat list immediately
+      // This ensures chat list shows updated unread counts and message order
+      get().getMyChatPartners(true);
+
+      // Update recent notifications map for browser notifications
       const text = newMessage.text
         ? newMessage.text
         : newMessage.image
@@ -295,99 +318,93 @@ export const useChatStore = create((set, get) => ({
       map[senderId] = lastTwo;
       set({ recentNotifications: map });
 
-      // Show browser notification
-      if (typeof window !== "undefined" && "Notification" in window) {
-        const canNotify = Notification.permission === "granted";
-        if (canNotify) {
-          // Get sender name from populated data or from existing lists
-          let senderName = "New message";
+      // Show browser notification and sound only if NOT currently viewing this chat
+      if (!fromSelectedUser) {
+        // Browser notification
+        if (typeof window !== "undefined" && "Notification" in window) {
+          const canNotify = Notification.permission === "granted";
+          if (canNotify) {
+            let senderName = "New message";
 
-          if (
-            typeof newMessage.senderId === "object" &&
-            newMessage.senderId.fullName
-          ) {
-            senderName = newMessage.senderId.fullName;
-          } else {
-            // try to resolve sender name from existing lists
-            const { chats, allContacts } = get();
-            const sender =
-              (chats || []).find((u) => u._id === senderId) ||
-              (allContacts || []).find((u) => u._id === senderId);
-            if (sender?.fullName) {
-              senderName = sender.fullName;
-            }
-          }
-
-          const title = `Message from ${senderName}`;
-          const body = lastTwo.join("\n");
-          const n = new Notification(title, {
-            body,
-            icon: "/logo.png",
-            tag: senderId, // group by sender
-          });
-          n.onclick = () => {
-            window.focus?.();
-            // open that chat if we know the user
-            const { chats, allContacts, setSelectedUser, setActiveTab } = get();
-            const sender =
-              (chats || []).find((u) => u._id === senderId) ||
-              (allContacts || []).find((u) => u._id === senderId);
-            if (sender) {
-              setActiveTab("chats");
-              setSelectedUser(sender);
-            }
-            n.close?.();
-          };
-        } else if (Notification.permission === "default") {
-          Notification.requestPermission()
-            .then((perm) => {
-              if (perm === "granted") {
-                // try once after permission grant
-                const { subscribeToGlobalNotifications } = get();
-                subscribeToGlobalNotifications();
+            if (
+              typeof newMessage.senderId === "object" &&
+              newMessage.senderId.fullName
+            ) {
+              senderName = newMessage.senderId.fullName;
+            } else {
+              const { chats, allContacts } = get();
+              const sender =
+                (chats || []).find((u) => u._id === senderId) ||
+                (allContacts || []).find((u) => u._id === senderId);
+              if (sender?.fullName) {
+                senderName = sender.fullName;
               }
-            })
-            .catch(() => {});
+            }
+
+            const title = `Message from ${senderName}`;
+            const body = lastTwo.join("\n");
+            const n = new Notification(title, {
+              body,
+              icon: "/logo.png",
+              tag: senderId,
+            });
+            n.onclick = () => {
+              window.focus?.();
+              const { chats, allContacts, setSelectedUser, setActiveTab } =
+                get();
+              const sender =
+                (chats || []).find((u) => u._id === senderId) ||
+                (allContacts || []).find((u) => u._id === senderId);
+              if (sender) {
+                setActiveTab("chats");
+                setSelectedUser(sender);
+              }
+              n.close?.();
+            };
+          } else if (Notification.permission === "default") {
+            Notification.requestPermission().catch(() => {});
+          }
         }
-      }
 
-      // Sound for background/other chat
-      if (isSoundEnabled) {
-        const notificationSound = new Audio("/sounds/notification.mp3");
-        notificationSound.currentTime = 0;
-        notificationSound.play().catch(() => {});
-      }
+        // Play notification sound
+        if (isSoundEnabled) {
+          const notificationSound = new Audio("/sounds/notification.mp3");
+          notificationSound.currentTime = 0;
+          notificationSound.play().catch(() => {});
+        }
 
-      // Optional vibration on supported devices
-      try {
-        navigator.vibrate?.(200);
-      } catch {}
+        // Vibration on mobile devices
+        try {
+          navigator.vibrate?.(200);
+        } catch {}
+      }
     };
 
     // Listen for messages read event
-    socket.on("messagesRead", (data) => {
+    const readHandler = (data) => {
       const { authUser } = useAuthStore.getState();
       const currentSelectedUser = get().selectedUser;
 
-      // Update messages in current chat if viewing that conversation
       if (
         currentSelectedUser &&
         currentSelectedUser._id === data.chatPartnerId
       ) {
-        const updatedMessages = get().messages.map((msg) => {
-          if (
-            msg.senderId === authUser._id &&
-            msg.receiverId === data.chatPartnerId
-          ) {
-            return { ...msg, read: true };
-          }
-          return msg;
-        });
-        set({ messages: updatedMessages });
+        set((state) => ({
+          messages: state.messages.map((msg) => {
+            if (
+              msg.senderId === authUser._id &&
+              msg.receiverId === data.chatPartnerId
+            ) {
+              return { ...msg, read: true };
+            }
+            return msg;
+          }),
+        }));
       }
-    });
+    };
 
     socket.on("newMessage", handler);
+    socket.on("messagesRead", readHandler);
     set({ globalMessageListener: handler });
   },
 
