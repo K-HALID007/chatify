@@ -120,6 +120,9 @@ export const useChatStore = create((set, get) => ({
       const updatedMessages = get().messages.filter(msg => msg._id !== tempId);
       set({ messages: [...updatedMessages, res.data] });
       
+      // Refresh chat list to update order (this chat should move to top)
+      get().getMyChatPartners(true);
+      
     } catch (error) {
       console.error("Error sending message:", error);
       
@@ -149,7 +152,10 @@ export const useChatStore = create((set, get) => ({
     if (!selectedUser) return;
 
     const socket = useAuthStore.getState().socket;
-    if (!socket) return;
+    if (!socket) {
+      console.warn("Socket not available for subscribeToMessages");
+      return;
+    }
 
     // Remove any existing listeners first to prevent duplicates
     const existingHandler = get().chatMessageListener;

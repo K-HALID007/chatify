@@ -110,10 +110,13 @@ export const sendMessage = async (req, res) => {
     if (receiverSocketId) {
       try {
         io.to(receiverSocketId).emit("newMessage", populatedMessage);
+        console.log(`Message emitted to receiver ${receiverId} via socket ${receiverSocketId}`);
       } catch (socketError) {
         console.error("Socket emission error:", socketError);
         // Don't fail the request if socket emission fails
       }
+    } else {
+      console.log(`Receiver ${receiverId} is not online, message saved to database only`);
     }
 
     // Always return success if message was saved to database
